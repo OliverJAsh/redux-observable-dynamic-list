@@ -1,6 +1,6 @@
-# TODO: title
+# Dynamic list state in redux-observable
 
-At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux-observable] inside our Redux application. However, it quite quickly started to feel like we were breaking away from idiomatic usage of redux-observable.
+At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux-observable] inside our Redux application. However, quite quickly it started to feel like we were breaking away from idiomatic usage of redux-observable.
 
 I believe our use cases are simple and common. By providing examples of the challenges we're facing, my hope is that either someone can point us to an existing idiomatic solution, or by sharing our ideas we can begin to establish an idiomatic solution.
 
