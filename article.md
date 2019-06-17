@@ -4,8 +4,6 @@ At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux
 
 I believe our use cases are simple and common. By providing examples of the challenges we're facing, my hope is that either someone can point us to an existing idiomatic solution, or by sharing our ideas we can begin to establish an idiomatic solution.
 
-The examples used in this article can be found in full length [on GitHub](https://github.com/OliverJAsh/redux-observable-dynamic-list).
-
 ## Setting the scene
 
 Consider an application that displays a list of counters (counting upwards every 1 second), with a button to add a new counter (triggering the `AddCounter` action) or remove an existing one (triggering the `RemoveCounter` action).
@@ -42,7 +40,7 @@ Significantly, we also want to _support cancellation_: when a counter is removed
 
 In this way, we can think of _each counter in the list as having its own corresponding side effects_.
 
-You might be thinking: surely it wouldn't be the end of the world if we didn't cancel/clear the interval, as long as the counter is removed from the UI? Whilst in this case that is true, in many other cases, cancellation _does_ matter. This article is just using a simple, contrived example for demonstration purposes. For example, if we were building a photo uploader with a list of photos, we would want to [abort the request](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) to upload the photo when its removed from the list (to save the user's data and for confidentiality).
+You might be thinking: surely it wouldn't be the end of the world if we didn't cancel/clear the interval, as long as the counter is removed from the UI? Whilst in this case that is true, in many other cases, cancellation _does_ matter. This article is just using a simple, contrived example for demonstration purposes. For example, if we were building a photo uploader with a list of photos (as [we are at Unsplash][uploader]), we would want to [abort the request](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) to upload the photo when its removed from the list (to save the user's data and for confidentiality).
 
 ## redux-observable
 
@@ -232,3 +230,4 @@ Perhaps the reason there isn't an existing idiomatic solution for this is becaus
 [redux-loop]: https://github.com/redux-loop/redux-loop
 [elm commands]: https://elmprogramming.com/commands.html
 [redux-observable]: https://redux-observable.js.org/
+[uploader]: https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
