@@ -70,7 +70,7 @@ interval(1000).pipe(mapTo(incrementCounter(counterId)));
 
 Using redux-observable, inside our epic, how can we _correspond_ a counter in our list state to a counter side effect (`setInterval`)?
 
-In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, won't help in this case because `combineEpics` only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
+In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, `combineEpics` won't help in this case because it only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
 
 ## Potential solutions
 
@@ -218,7 +218,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, for example see [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we chose not to go with this approach at Unsplash.
+This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, which is what some of the existing libraries are doing, such as [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we chose not to go with this approach at Unsplash.
 
 If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/563).
 
