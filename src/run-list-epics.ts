@@ -38,9 +38,9 @@ export const runListEpics = <ListItemState, Action extends ReduxAction>({
   { [id: string]: ListItemState },
   Action
 > => {
-  type ListItemAction$sById = { [id: string]: Observable<Action> };
+  type ListItemActions = { [id: string]: Observable<Action> };
 
-  const seed: ListItemAction$sById = {};
+  const seed: ListItemActions = {};
 
   return listItemStates$ => {
     const getListItemStateStateObservable = (
@@ -62,10 +62,10 @@ export const runListEpics = <ListItemState, Action extends ReduxAction>({
       // When an ID is deleted, delete the epic result.
       scan(
         (
-          listItemAction$sById: ListItemAction$sById,
+          listItemActions: ListItemActions,
           listItemStates: { [id: string]: ListItemState }
         ) => {
-          const oldIds = Object.keys(listItemAction$sById);
+          const oldIds = Object.keys(listItemActions);
 
           const addedStates = omit(listItemStates, oldIds);
           const added = mapValues(addedStates, (listItemState, addedId) => {
@@ -83,7 +83,7 @@ export const runListEpics = <ListItemState, Action extends ReduxAction>({
 
           const newIds = Object.keys(listItemStates);
           const deletedIds = difference(oldIds, newIds);
-          const afterDeleted = omit(listItemAction$sById, deletedIds);
+          const afterDeleted = omit(listItemActions, deletedIds);
           return {
             ...added,
             ...afterDeleted
