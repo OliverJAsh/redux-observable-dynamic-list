@@ -1,17 +1,8 @@
-# TODO: title
+# Dynamic list state in redux-observable
 
-TODO: link
-
-- https://github.com/redux-observable/redux-observable/issues/562
-- https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
-
-At Unsplash we're big fans of Observables/RxJS, so naturally we opted for redux-observable inside our Redux application. However, it quite quickly started to feel like we were breaking away from idiomatic usage of redux-observable.
+At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux-observable] inside our Redux application. However, quite quickly it started to feel like we were breaking away from idiomatic usage of redux-observable.
 
 I believe our use cases are simple and common. By providing examples of the challenges we're facing, my hope is that either someone can point us to an existing idiomatic solution, or by sharing our ideas we can begin to establish an idiomatic solution.
-
-Perhaps the reason there isn't an existing idiomatic solution for this is because redux-observable is agnostic towards its usage. After all, it's only there to connect the dots between Redux and RxJS, and Observables are primitives which can be used in all sorts of ways. That said, it would certainly benefit users of redux-observables if there were more examples of advanced (but common) patterns and how to use RxJS (not necessarily redux-observable) to solve them.
-
-TODO: mention demo repo: https://github.com/OliverJAsh/redux-observable-dynamic-list
 
 ## Setting the scene
 
@@ -21,7 +12,7 @@ Consider an application that displays a list of counters (counting upwards every
 
 ## Redux state types
 
-Each counter will need its own state (a number representing the current value of the couter).
+Each counter will need its own state (a number representing the current value of the counter).
 
 ```ts
 type CounterState = {
@@ -49,11 +40,11 @@ Significantly, we also want to _support cancellation_: when a counter is removed
 
 In this way, we can think of _each counter in the list as having its own corresponding side effects_.
 
-You might be thinking: surely it wouldn't be the end of the world if we didn't cancel/clear the interval, as long as the counter is removed from the UI? Whilst in this case that is true, in many other cases, cancellation _does_ matter. This article is just using a simple, contrived example for demonstration purposes. For example, if we were building a photo uploader with a list of photos, we would want to [abort the request](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) to upload the photo when its removed from the list (to save the user's data and for confidentiality).
+You might be thinking: surely it wouldn't be the end of the world if we didn't cancel/clear the interval, as long as the counter is removed from the UI? Whilst in this case that is true, in many other cases, cancellation _does_ matter. This article is just using a simple, contrived example for demonstration purposes. For example, if we were building a photo uploader with a list of photos (as [we are at Unsplash][uploader]), we would want to [abort the request](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) to upload the photo when its removed from the list (to save the user's data and for confidentiality).
 
 ## redux-observable
 
-As we saw, cancellation is one of our requirements. `Observable`s can provide us with that:
+As we saw, cancellation is one of our requirements. Fortunately, `Observable`s can provide us with that:
 
 ```ts
 const interval$ = interval(1000);
@@ -67,7 +58,7 @@ subscription.unsubscribe();
 
 Note: we shouldn't need to call `unsubscribe` manually—we can instead use the [`takeUntil` operator](https://redux-observable.js.org/docs/recipes/Cancellation.html).
 
-For this reason it seems to make sense to use redux-observable.
+For this reason it seems to make sense to use [redux-observable].
 
 Inside an [epic](https://redux-observable.js.org/docs/basics/Epics.html), we can declare our side effect (starting the interval). We can then map each interval to our `IncrementCounter` action.
 
@@ -79,7 +70,7 @@ interval(1000).pipe(mapTo(incrementCounter(counterId)));
 
 Using redux-observable, inside our epic, how can we _correspond_ a counter in our list state to a counter side effect (`setInterval`)?
 
-In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, won't help in this case because `combineEpics` only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
+In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, `combineEpics` won't help in this case because it only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
 
 ## Potential solutions
 
@@ -118,11 +109,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 
 Note: some minor details have been removed to simplify this example.
 
-TODO: link, tag: solution-actions
+Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
 
 However, our `AddCounter` action is _only a request_ to add a counter. It doesn't tell us whether a counter was actually added to the list state. For example, the reducer may have decided not to add the counter, because the list has reached its maximum allowed size. Similarly, our `RemoveCounter` action is also a request as opposed to a notification that the state changed in some way.
-
-TODO: action without id?
 
 ```ts
 const MAXIMUM_ALLOWED_SIZE = 10;
@@ -168,7 +157,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-TODO: link, tag: solution-watching-state
+Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
+
+If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/562).
 
 ### Triggering actions when state changes
 
@@ -227,10 +218,16 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-This is the solution I like best. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, for example see [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we don't currently use it at Unsplash—perhaps we should revisit that decision.
+This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, which is what some of the existing libraries are doing, such as [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux because it significantly changes the reducer signature, which is ultimately why we chose not to go with this approach at Unsplash.
 
-TODO: link to https://github.com/redux-observable/redux-observable/issues/563
+If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/563).
+
+## After thoughts
+
+Perhaps the reason there isn't an existing idiomatic solution for this is because redux-observable is agnostic towards its usage. After all, it's only there to connect the dots between Redux and RxJS, and Observables are primitives which can be used in all sorts of ways. That said, it would certainly benefit users of redux-observables if there were more examples of advanced (but common) patterns and how to use RxJS (not necessarily redux-observable) to solve them.
 
 [redux-reducer-effects]: https://github.com/cubik-oss/redux-reducer-effects
 [redux-loop]: https://github.com/redux-loop/redux-loop
 [elm commands]: https://elmprogramming.com/commands.html
+[redux-observable]: https://redux-observable.js.org/
+[uploader]: https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
