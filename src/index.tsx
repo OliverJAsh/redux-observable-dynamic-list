@@ -5,10 +5,12 @@ import { App } from "./components";
 import { store } from "./store";
 
 const rootEl = document.getElementById("root");
-store.subscribe(() => {
+const subscribeFn = () => {
   const state = store.getState();
   render(<App state={state} />, rootEl);
-});
+};
+store.subscribe(subscribeFn);
+subscribeFn();
 
 store.dispatch(addCounter("foo"));
 console.log(store.getState());
