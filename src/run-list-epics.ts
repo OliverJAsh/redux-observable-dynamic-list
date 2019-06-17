@@ -20,7 +20,7 @@ type Nullable<T> = T | null;
 // - fp-ts `catOptions`
 // - Haskell `catMaybes`
 // but operates on Observables instead of Arrays.
-export const catNullable$ = <T>(): OperatorFunction<Nullable<T>, T> =>
+const catNullable$ = <T>(): OperatorFunction<Nullable<T>, T> =>
   pipe(filter((t): t is T => t !== null));
 
 type RunListEpicsParams<ListItemState, Action extends ReduxAction> = {
