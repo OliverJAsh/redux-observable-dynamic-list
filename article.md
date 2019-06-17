@@ -1,10 +1,5 @@
 # TODO: title
 
-TODO: link
-
-- https://github.com/redux-observable/redux-observable/issues/562
-- https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
-
 At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux-observable] inside our Redux application. However, it quite quickly started to feel like we were breaking away from idiomatic usage of redux-observable.
 
 I believe our use cases are simple and common. By providing examples of the challenges we're facing, my hope is that either someone can point us to an existing idiomatic solution, or by sharing our ideas we can begin to establish an idiomatic solution.
@@ -116,7 +111,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 
 Note: some minor details have been removed to simplify this example.
 
-Code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
+Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
 
 However, our `AddCounter` action is _only a request_ to add a counter. It doesn't tell us whether a counter was actually added to the list state. For example, the reducer may have decided not to add the counter, because the list has reached its maximum allowed size. Similarly, our `RemoveCounter` action is also a request as opposed to a notification that the state changed in some way.
 
@@ -164,7 +159,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-Code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
+Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
+
+If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/562).
 
 ### Triggering actions when state changes
 
@@ -223,9 +220,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-This is the solution I like best. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, for example see [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we don't currently use it at Unsplash—perhaps we should revisit that decision.
+This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, for example see [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we chose not to go with this approach at Unsplash.
 
-TODO: link to https://github.com/redux-observable/redux-observable/issues/563
+If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/563).
 
 ## After thoughts
 
