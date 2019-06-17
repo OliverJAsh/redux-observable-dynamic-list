@@ -53,7 +53,7 @@ You might be thinking: surely it wouldn't be the end of the world if we didn't c
 
 ## redux-observable
 
-As we saw, cancellation is one of our requirements. `Observable`s can provide us with that:
+As we saw, cancellation is one of our requirements. Fortunately, `Observable`s can provide us with that:
 
 ```ts
 const interval$ = interval(1000);
@@ -118,7 +118,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 
 Note: some minor details have been removed to simplify this example.
 
-TODO: link, tag: solution-actions
+https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
 
 However, our `AddCounter` action is _only a request_ to add a counter. It doesn't tell us whether a counter was actually added to the list state. For example, the reducer may have decided not to add the counter, because the list has reached its maximum allowed size. Similarly, our `RemoveCounter` action is also a request as opposed to a notification that the state changed in some way.
 
@@ -168,7 +168,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-TODO: link, tag: solution-watching-state
+https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
 
 ### Triggering actions when state changes
 
