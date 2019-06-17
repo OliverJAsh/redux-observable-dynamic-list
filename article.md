@@ -218,7 +218,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, which is what some of the existing libraries are doing, such as [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux, which is ultimately why we chose not to go with this approach at Unsplash.
+This is the solution I personally like most. It is also the way [Elm handles this][elm commands] (which is where the whole idea of Redux came from in the first place). It is perfectly possible to do this in Redux by writing a small store enhancer, which is what some of the existing libraries are doing, such as [redux-reducer-effects] and [redux-loop]. But, it breaks away from idiomatic Redux because it significantly changes the reducer signature, which is ultimately why we chose not to go with this approach at Unsplash.
 
 If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/563).
 
