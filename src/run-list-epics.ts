@@ -60,37 +60,31 @@ export const runListEpics = <ListItemState, Action extends ReduxAction>({
     return listItemStates$.pipe(
       // When an ID is added, invoke the epic and store the result.
       // When an ID is deleted, delete the epic result.
-      scan(
-        (
-          listItemActions: ListItemActions,
-          listItemStates: { [id: string]: ListItemState }
-        ) => {
-          const oldIds = Object.keys(listItemActions);
+      scan((listItemActions: ListItemActions, listItemStates) => {
+        const oldIds = Object.keys(listItemActions);
 
-          const addedStates = omit(listItemStates, oldIds);
-          const added = mapValues(addedStates, (listItemState, addedId) => {
-            const listItemStateObservable$ = getListItemStateStateObservable(
-              addedId,
-              listItemState
-            );
-            const listItemAction$ = listItemEpic(
-              action$,
-              listItemStateObservable$,
-              {}
-            );
-            return listItemAction$;
-          });
+        const addedStates = omit(listItemStates, oldIds);
+        const added = mapValues(addedStates, (listItemState, addedId) => {
+          const listItemStateObservable$ = getListItemStateStateObservable(
+            addedId,
+            listItemState
+          );
+          const listItemAction$ = listItemEpic(
+            action$,
+            listItemStateObservable$,
+            {}
+          );
+          return listItemAction$;
+        });
 
-          const newIds = Object.keys(listItemStates);
-          const deletedIds = difference(oldIds, newIds);
-          const afterDeleted = omit(listItemActions, deletedIds);
-          return {
-            ...added,
-            ...afterDeleted
-          };
-        },
-        seed
-      ),
+        const newIds = Object.keys(listItemStates);
+        const deletedIds = difference(oldIds, newIds);
+        const afterDeleted = omit(listItemActions, deletedIds);
+        return {
+          ...added,
+          ...afterDeleted
+        };
+      }, seed),
       map(listItemAction$sById => Object.values(listItemAction$sById)),
       // When an observable is added, subscribe and emit values.
       // When an observable is deleted, unsubscribe.
