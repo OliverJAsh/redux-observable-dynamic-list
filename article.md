@@ -5,13 +5,11 @@ TODO: link
 - https://github.com/redux-observable/redux-observable/issues/562
 - https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
 
-At Unsplash we're big fans of Observables/RxJS, so naturally we opted for redux-observable inside our Redux application. However, it quite quickly started to feel like we were breaking away from idiomatic usage of redux-observable.
+At Unsplash we're big fans of Observables/RxJS, so naturally we opted for [redux-observable] inside our Redux application. However, it quite quickly started to feel like we were breaking away from idiomatic usage of redux-observable.
 
 I believe our use cases are simple and common. By providing examples of the challenges we're facing, my hope is that either someone can point us to an existing idiomatic solution, or by sharing our ideas we can begin to establish an idiomatic solution.
 
-Perhaps the reason there isn't an existing idiomatic solution for this is because redux-observable is agnostic towards its usage. After all, it's only there to connect the dots between Redux and RxJS, and Observables are primitives which can be used in all sorts of ways. That said, it would certainly benefit users of redux-observables if there were more examples of advanced (but common) patterns and how to use RxJS (not necessarily redux-observable) to solve them.
-
-TODO: mention demo repo: https://github.com/OliverJAsh/redux-observable-dynamic-list
+The examples used in this article can be found in full length [on GitHub](https://github.com/OliverJAsh/redux-observable-dynamic-list).
 
 ## Setting the scene
 
@@ -21,7 +19,7 @@ Consider an application that displays a list of counters (counting upwards every
 
 ## Redux state types
 
-Each counter will need its own state (a number representing the current value of the couter).
+Each counter will need its own state (a number representing the current value of the counter).
 
 ```ts
 type CounterState = {
@@ -67,7 +65,7 @@ subscription.unsubscribe();
 
 Note: we shouldn't need to call `unsubscribe` manually—we can instead use the [`takeUntil` operator](https://redux-observable.js.org/docs/recipes/Cancellation.html).
 
-For this reason it seems to make sense to use redux-observable.
+For this reason it seems to make sense to use [redux-observable].
 
 Inside an [epic](https://redux-observable.js.org/docs/basics/Epics.html), we can declare our side effect (starting the interval). We can then map each interval to our `IncrementCounter` action.
 
@@ -118,11 +116,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 
 Note: some minor details have been removed to simplify this example.
 
-https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
+Code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
 
 However, our `AddCounter` action is _only a request_ to add a counter. It doesn't tell us whether a counter was actually added to the list state. For example, the reducer may have decided not to add the counter, because the list has reached its maximum allowed size. Similarly, our `RemoveCounter` action is also a request as opposed to a notification that the state changed in some way.
-
-TODO: action without id?
 
 ```ts
 const MAXIMUM_ALLOWED_SIZE = 10;
@@ -168,7 +164,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 };
 ```
 
-https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
+Code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
 
 ### Triggering actions when state changes
 
@@ -231,6 +227,11 @@ This is the solution I like best. It is also the way [Elm handles this][elm comm
 
 TODO: link to https://github.com/redux-observable/redux-observable/issues/563
 
+## After thoughts
+
+Perhaps the reason there isn't an existing idiomatic solution for this is because redux-observable is agnostic towards its usage. After all, it's only there to connect the dots between Redux and RxJS, and Observables are primitives which can be used in all sorts of ways. That said, it would certainly benefit users of redux-observables if there were more examples of advanced (but common) patterns and how to use RxJS (not necessarily redux-observable) to solve them.
+
 [redux-reducer-effects]: https://github.com/cubik-oss/redux-reducer-effects
 [redux-loop]: https://github.com/redux-loop/redux-loop
 [elm commands]: https://elmprogramming.com/commands.html
+[redux-observable]: https://redux-observable.js.org/
