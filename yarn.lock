@@ -1718,11 +1718,6 @@ mem@^4.0.0:
     mimic-fn "^2.0.0"
     p-is-promise "^2.0.0"
 
-memoize-resolver@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/memoize-resolver/-/memoize-resolver-1.0.0.tgz#93f01b61909008eb9d9b521fc1db152cc1b47f06"
-  integrity sha512-mXfNXte0RSWl0rEIsQhXutfM2R2Oa7UyKDD7XoZMEbKeucTRms04y5y41U8gLqPzRx7ViN/QyYnTR2TX/5tawA==
-
 memory-fs@^0.4.0, memory-fs@~0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/memory-fs/-/memory-fs-0.4.1.tgz#3a9a20b8462523e447cfbc7e8bb80ed667bfc552"
@@ -2479,13 +2474,6 @@ run-queue@^1.0.0, run-queue@^1.0.3:
   integrity sha1-6Eg5bwV9Ij8kOGkkYY4laUFh7Ec=
   dependencies:
     aproba "^1.1.1"
-
-rxjs-etc@^9.6.2:
-  version "9.6.2"
-  resolved "https://registry.yarnpkg.com/rxjs-etc/-/rxjs-etc-9.6.2.tgz#3acba737d5ffd7a0cef6370160c62aeb6444c668"
-  integrity sha512-0I32ERAA6gCCuOR+to0XauiRntAiraTnNCMjO6ZaoHLkwYzytpgMafHZ7VEVtsNCHrYEcS6gBxMtnTc1MwaSYw==
-  dependencies:
-    memoize-resolver "^1.0.0"
 
 rxjs-spy@^7.5.1:
   version "7.5.1"

@@ -6,12 +6,19 @@
 // When the list item is removed from the list state, the epic will be unsubscribed from, thereby
 // aborting any pending work (e.g. requests).
 
-import { difference, mapValues, omit } from "lodash";
+import { difference, omit } from "lodash";
 import { Action as ReduxAction } from "redux";
 import { ActionsObservable, Epic } from "redux-observable";
-import { Observable, OperatorFunction, pipe } from "rxjs";
-import { mergeHigherOrderArray } from "rxjs-etc/observable/mergeHigherOrderArray";
-import { distinctUntilChanged, filter, map, scan } from "rxjs/operators";
+import { OperatorFunction, pipe } from "rxjs";
+import {
+  distinctUntilChanged,
+  filter,
+  map,
+  mergeMap,
+  pairwise,
+  startWith,
+  takeUntil
+} from "rxjs/operators";
 import { getStateObservable } from "./redux-observable";
 
 type Nullable<T> = T | null;
@@ -37,58 +44,55 @@ export const runListEpics = <ListItemState, Action extends ReduxAction>({
 }: RunListEpicsParams<ListItemState, Action>): OperatorFunction<
   { [id: string]: ListItemState },
   Action
-> => {
-  type ListItemActions = { [id: string]: Observable<Action> };
-
-  const seed: ListItemActions = {};
-
-  return listItemStates$ => {
-    const getListItemStateStateObservable = (
-      id: string,
-      initialState: ListItemState
-    ) => {
-      const listItemState$ = listItemStates$.pipe(
-        map(selectListItem(id)),
-        // When the list item is removed, this observable will emit `None` right before it
-        // is unsubscribed, so we filter this out.
-        catNullable$(),
-        distinctUntilChanged()
-      );
-      return getStateObservable(listItemState$, initialState);
-    };
-
-    return listItemStates$.pipe(
-      // When an ID is added, invoke the epic and store the result.
-      // When an ID is deleted, delete the epic result.
-      scan((listItemActions: ListItemActions, listItemStates) => {
-        const oldIds = Object.keys(listItemActions);
-
-        const addedStates = omit(listItemStates, oldIds);
-        const added = mapValues(addedStates, (listItemState, addedId) => {
-          const listItemStateObservable$ = getListItemStateStateObservable(
-            addedId,
-            listItemState
-          );
-          const listItemAction$ = listItemEpic(
-            action$,
-            listItemStateObservable$,
-            {}
-          );
-          return listItemAction$;
-        });
-
-        const newIds = Object.keys(listItemStates);
-        const deletedIds = difference(oldIds, newIds);
-        const afterDeleted = omit(listItemActions, deletedIds);
-        return {
-          ...added,
-          ...afterDeleted
-        };
-      }, seed),
-      map(listItemAction$sById => Object.values(listItemAction$sById)),
-      // When an observable is added, subscribe and emit values.
-      // When an observable is deleted, unsubscribe.
-      mergeHigherOrderArray()
+> => listItemStates$ => {
+  const getListItemStateStateObservable = (
+    id: string,
+    initialState: ListItemState
+  ) => {
+    const listItemState$ = listItemStates$.pipe(
+      map(selectListItem(id)),
+      // When the list item is removed, this observable will emit `None` right before it
+      // is unsubscribed, so we filter this out.
+      catNullable$(),
+      distinctUntilChanged()
     );
+    return getStateObservable(listItemState$, initialState);
   };
+
+  const initialListItemStates: { [id: string]: ListItemState } = {};
+  const listItemStatesPairs$ = listItemStates$.pipe(
+    startWith(initialListItemStates),
+    pairwise()
+  );
+
+  const addedStates$ = listItemStatesPairs$.pipe(
+    map(([prev, current]) => {
+      const oldIds = Object.keys(prev);
+      return omit(current, oldIds);
+    }),
+    mergeMap(addedStates => Object.entries(addedStates))
+  );
+
+  const removedStateIds$ = listItemStatesPairs$.pipe(
+    mergeMap(([prev, current]) => {
+      const oldIds = Object.keys(prev);
+      const currentIds = Object.keys(current);
+      return difference(oldIds, currentIds);
+    })
+  );
+
+  return addedStates$.pipe(
+    mergeMap(([id, listItemState]) => {
+      const thisStateRemoved$ = removedStateIds$.pipe(
+        filter(removedStateId => removedStateId === id)
+      );
+      const listItemStateObservable$ = getListItemStateStateObservable(
+        id,
+        listItemState
+      );
+      return listItemEpic(action$, listItemStateObservable$, {}).pipe(
+        takeUntil(thisStateRemoved$)
+      );
+    })
+  );
 };
