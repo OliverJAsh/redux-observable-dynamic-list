@@ -148,16 +148,16 @@ Another solution involves taking advantage of the `state$: Observable<State>` pa
 - When a file is added to the list state, run a "child epic" for the corresponding file.
 - When we observe a corresponding deletion of this file instance from the list state, we can unsubscribe from the "child epic" `Observable`.
 
-This is the solution we currently use. We've packaged this up into a function we call `runListEpics`. Here it is in usage:
+This is the solution we currently use. We've packaged this up into a function we call `runDictEpics` (run dictionary epics). Here it is in usage:
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
   const fileAction$ = state$.pipe(
     map(state => state.fileStates),
-    runListEpics({
+    runDictEpics({
       action$,
-      listItemEpic: fileEpic,
-      selectListItem: id => fileStates => fileStates[id]
+      valueEpic: fileEpic,
+      selectValue: id => fileStates => fileStates[id]
     })
   );
   return fileAction$;
