@@ -1,6 +1,6 @@
 import { Epic } from "redux-observable";
-import { timer } from "rxjs";
 import { tag } from "rxjs-spy/operators/tag";
+import { ajax } from "rxjs/ajax";
 import { filter, map, mapTo, mergeMap, takeUntil } from "rxjs/operators";
 import {
   Action,
@@ -12,8 +12,8 @@ import { getStateObservable } from "./redux-observable";
 import { FileState, State } from "./state-types";
 
 const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
-  timer(1000).pipe(
-    tag(`timer ${state$.value.id}`),
+  ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+    tag(`upload ${state$.value.id}`),
     mapTo(fileUploaded(state$.value.id))
   );
 

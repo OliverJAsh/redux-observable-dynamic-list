@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import { map } from "lodash";
 import * as React from "react";
 import { Component } from "react";
@@ -30,11 +31,16 @@ export class App extends Component<{ state: State }> {
       );
     });
     const addFile = () => store.dispatch(actions.addFile(uuid()));
+    const isUploadedCount = _.filter(
+      state.fileStates,
+      fileState => fileState.isUploaded
+    ).length;
     return (
       <div>
         <h1>List of files</h1>
         <ul>{fileElements}</ul>
         <button onClick={addFile}>Add</button>
+        <p>Files uploaded so far: {isUploadedCount}</p>
       </div>
     );
   }
