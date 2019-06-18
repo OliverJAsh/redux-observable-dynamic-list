@@ -148,7 +148,7 @@ Another solution involves taking advantage of the `state$: Observable<State>` pa
 - When a file is added to the list state, run a "child epic" for the corresponding file.
 - When we observe a corresponding deletion of this file instance from the list state, we can unsubscribe from the "child epic" `Observable`.
 
-This is the solution we currently use. We've packaged this up into a function we call `runDictEpics` (run dictionary epics). Here it is in usage:
+This is the solution we currently use. We've packaged this up into a function we call `runDictEpics` (dict is short for dictionary). Here it is in usage:
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
@@ -165,6 +165,37 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 ```
 
 Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
+
+Alternatively, we can watch the state for additions and deletions like above, and then map those to actions such as `AddedFile` and `RemovedFile` (respectively) and return/dispatch them in our epic. When the epic receives these actions, it can use them to decide when start/stop child epics.
+
+```ts
+const rootEpic: Epic<Action, State> = (action$, state$) => {
+  const fileStatesAction$ = state$.pipe(
+    map(state => state.fileStates),
+    // Maps our list/dict state to actions representing additions/deletions.
+    getDictStateChangeActions()
+  );
+
+  const addedFileAction$ = action$.pipe(filter(checkIsAddedFileAction));
+  const removedFileAction$ = action$.pipe(filter(checkIsRemovedFileAction));
+  const fileAction$ = addedFileAction$.pipe(
+    mergeMap(action => {
+      const removedThisFileAction$ = removedFileAction$.pipe(
+        filter(({ id }) => id === action.id)
+      );
+      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
+      return fileEpic(action$, fileState$, {}).pipe(
+        // Dynamically unsubscribe from the "child epic"
+        takeUntil(removedThisFileAction$)
+      );
+    })
+  );
+
+  return merge(fileStatesAction$, fileAction$);
+};
+```
+
+Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state-emit-actions/src/epics.ts
 
 If you're interested, there is a [discussion about this approach on GitHub](https://github.com/redux-observable/redux-observable/issues/562).
 
