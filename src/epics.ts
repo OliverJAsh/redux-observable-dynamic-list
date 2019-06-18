@@ -3,7 +3,7 @@ import { tag } from "rxjs-spy/operators/tag";
 import { ajax } from "rxjs/ajax";
 import { map, mapTo } from "rxjs/operators";
 import { Action, fileUploaded } from "./actions";
-import { runListEpics } from "./run-list-epics";
+import { runDictEpics } from "./run-dict-epics";
 import { FileState, State } from "./state-types";
 
 const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
@@ -15,10 +15,10 @@ const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
 export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
   const fileAction$ = state$.pipe(
     map(state => state.fileStates),
-    runListEpics({
+    runDictEpics({
       action$,
-      listItemEpic: fileEpic,
-      selectListItem: id => fileStates => fileStates[id]
+      valueEpic: fileEpic,
+      selectValue: id => fileStates => fileStates[id]
     })
   );
   return fileAction$;
