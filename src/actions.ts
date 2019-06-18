@@ -1,39 +1,35 @@
 export enum ActionType {
-  AddCounter = "AddCounter",
-  RemoveCounter = "RemoveCounter",
-  IncrementCounter = "IncrementCounter"
+  AddFile = "AddFile",
+  RemoveFile = "RemoveFile",
+  FileUploaded = "FileUploaded"
 }
-export type AddCounterAction = {
-  type: ActionType.AddCounter;
+export type AddFileAction = {
+  type: ActionType.AddFile;
   id: string;
 };
-export const addCounter = (id: string): AddCounterAction => ({
-  type: ActionType.AddCounter,
+export const addFile = (id: string): AddFileAction => ({
+  type: ActionType.AddFile,
   id
 });
-export const checkIsAddCounterAction = (
+export const checkIsAddFileAction = (action: Action): action is AddFileAction =>
+  action.type === ActionType.AddFile;
+export type RemoveFileAction = {
+  type: ActionType.RemoveFile;
+  id: string;
+};
+export const removeFile = (id: string): RemoveFileAction => ({
+  type: ActionType.RemoveFile,
+  id
+});
+export const checkIsRemoveFileAction = (
   action: Action
-): action is AddCounterAction => action.type === ActionType.AddCounter;
-export type RemoveCounterAction = {
-  type: ActionType.RemoveCounter;
+): action is RemoveFileAction => action.type === ActionType.RemoveFile;
+type FileUploadedAction = {
+  type: ActionType.FileUploaded;
   id: string;
 };
-export const removeCounter = (id: string): RemoveCounterAction => ({
-  type: ActionType.RemoveCounter,
+export const fileUploaded = (id: string): FileUploadedAction => ({
+  type: ActionType.FileUploaded,
   id
 });
-type IncrementCounterAction = {
-  type: ActionType.IncrementCounter;
-  id: string;
-};
-export const checkIsRemoveCounterAction = (
-  action: Action
-): action is RemoveCounterAction => action.type === ActionType.RemoveCounter;
-export const incrementCounter = (id: string): IncrementCounterAction => ({
-  type: ActionType.IncrementCounter,
-  id
-});
-export type Action =
-  | AddCounterAction
-  | RemoveCounterAction
-  | IncrementCounterAction;
+export type Action = AddFileAction | RemoveFileAction | FileUploadedAction;

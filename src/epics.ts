@@ -1,42 +1,42 @@
 import { Epic } from "redux-observable";
-import { interval } from "rxjs";
+import { timer } from "rxjs";
 import { tag } from "rxjs-spy/operators/tag";
 import { filter, map, mapTo, mergeMap, takeUntil } from "rxjs/operators";
 import {
   Action,
-  checkIsAddCounterAction,
-  checkIsRemoveCounterAction,
-  incrementCounter
+  checkIsAddFileAction,
+  checkIsRemoveFileAction,
+  fileUploaded
 } from "./actions";
 import { getStateObservable } from "./redux-observable";
-import { CounterState, State } from "./state-types";
+import { FileState, State } from "./state-types";
 
-const counterEpic: Epic<Action, Action, CounterState> = (_action$, state$) =>
-  interval(1000).pipe(
-    tag(`interval ${state$.value.id}`),
-    mapTo(incrementCounter(state$.value.id))
+const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
+  timer(1000).pipe(
+    tag(`timer ${state$.value.id}`),
+    mapTo(fileUploaded(state$.value.id))
   );
 
 export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
-  const addCounterAction$ = action$.pipe(filter(checkIsAddCounterAction));
-  const removeCounterAction$ = action$.pipe(filter(checkIsRemoveCounterAction));
-  const counterAction$ = addCounterAction$.pipe(
-    // Run one child epic per counter
+  const addFileAction$ = action$.pipe(filter(checkIsAddFileAction));
+  const removeFileAction$ = action$.pipe(filter(checkIsRemoveFileAction));
+  const fileAction$ = addFileAction$.pipe(
+    // Run one child epic per file
     mergeMap(action => {
-      const removeThisCounterAction$ = removeCounterAction$.pipe(
+      const removeThisFileAction$ = removeFileAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const getState = (state: State) => state.counterStates[action.id];
+      const getState = (state: State) => state.fileStates[action.id];
       const initialState = getState(state$.value);
-      const counterStateObservable = getStateObservable(
+      const fileStateObservable = getStateObservable(
         state$.pipe(map(getState)),
         initialState
       );
-      return counterEpic(action$, counterStateObservable, {}).pipe(
+      return fileEpic(action$, fileStateObservable, {}).pipe(
         // Dynamically unsubscribe from the child epic
-        takeUntil(removeThisCounterAction$)
+        takeUntil(removeThisFileAction$)
       );
     })
   );
-  return counterAction$;
+  return fileAction$;
 };

@@ -3,18 +3,17 @@ import * as React from "react";
 import { Component } from "react";
 import * as uuid from "uuid/v4";
 import * as actions from "./actions";
-import { CounterState, State } from "./state-types";
+import { FileState, State } from "./state-types";
 import { store } from "./store";
 
-class Counter extends Component<{ counterState: CounterState }> {
+class File extends Component<{ fileState: FileState }> {
   render() {
-    const { counterState } = this.props;
-    const removeCounter = () =>
-      store.dispatch(actions.removeCounter(counterState.id));
+    const { fileState } = this.props;
+    const removeFile = () => store.dispatch(actions.removeFile(fileState.id));
     return (
       <div>
-        {counterState.counter}
-        <button onClick={removeCounter}>Remove</button>
+        {fileState.isUploaded}
+        <button onClick={removeFile}>Remove</button>
       </div>
     );
   }
@@ -23,19 +22,19 @@ class Counter extends Component<{ counterState: CounterState }> {
 export class App extends Component<{ state: State }> {
   render() {
     const { state } = this.props;
-    const counterElements = map(state.counterStates, counterState => {
+    const fileElements = map(state.fileStates, fileState => {
       return (
-        <li key={counterState.id}>
-          <Counter counterState={counterState} />
+        <li key={fileState.id}>
+          <File fileState={fileState} />
         </li>
       );
     });
-    const addCounter = () => store.dispatch(actions.addCounter(uuid()));
+    const addFile = () => store.dispatch(actions.addFile(uuid()));
     return (
       <div>
-        <h1>List of counters</h1>
-        <ul>{counterElements}</ul>
-        <button onClick={addCounter}>Add</button>
+        <h1>List of files</h1>
+        <ul>{fileElements}</ul>
+        <button onClick={addFile}>Add</button>
       </div>
     );
   }

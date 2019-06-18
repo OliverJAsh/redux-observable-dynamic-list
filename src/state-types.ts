@@ -1,10 +1,10 @@
-export type CounterState = {
+export type FileState = {
   id: string;
-  counter: number;
+  isUploaded: boolean;
 };
-export type CounterStates = {
-  [id: string]: CounterState;
+export type FileStates = {
+  [id: string]: FileState;
 };
 export type State = {
-  counterStates: CounterStates;
+  fileStates: FileStates;
 };
