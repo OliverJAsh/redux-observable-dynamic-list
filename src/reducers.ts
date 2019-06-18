@@ -1,24 +1,24 @@
 import * as _ from "lodash";
 import { Action as ReduxAction, AnyAction, Reducer } from "redux";
 import { Action, ActionType } from "./actions";
-import { CounterState, CounterStates, State } from "./state-types";
+import { FileState, FileStates, State } from "./state-types";
 
 type ReducerWithoutInitial<S, A extends ReduxAction = AnyAction> = (
   state: S,
   action: A
 ) => S;
 
-const counterStateReducer: ReducerWithoutInitial<CounterState, Action> = (
+const fileStateReducer: ReducerWithoutInitial<FileState, Action> = (
   prevState,
   action
 ) => {
   switch (action.type) {
-    case ActionType.IncrementCounter: {
+    case ActionType.FileUploaded: {
       const idToUpdate = action.id;
       if (prevState.id === idToUpdate) {
         const updatedState = {
           ...prevState,
-          counter: prevState.counter + 1
+          isUploaded: true
         };
         return updatedState;
       } else {
@@ -31,7 +31,7 @@ const counterStateReducer: ReducerWithoutInitial<CounterState, Action> = (
 };
 
 const initialState: State = {
-  counterStates: {}
+  fileStates: {}
 };
 
 export const reducer: Reducer<State, Action> = (
@@ -39,37 +39,36 @@ export const reducer: Reducer<State, Action> = (
   action
 ) => {
   switch (action.type) {
-    case ActionType.AddCounter: {
-      const newCounters: CounterStates = {
-        [action.id]: { id: action.id, counter: 0 }
+    case ActionType.AddFile: {
+      const newFiles: FileStates = {
+        [action.id]: { id: action.id, isUploaded: false }
       };
-      const updatedCounters = { ...prevState.counterStates, ...newCounters };
+      const updatedFiles = { ...prevState.fileStates, ...newFiles };
       const updatedState = {
         ...prevState,
-        counterStates: updatedCounters
+        fileStates: updatedFiles
       };
       return updatedState;
     }
-    case ActionType.RemoveCounter: {
+    case ActionType.RemoveFile: {
       const idToRemove = action.id;
-      const updatedCounters = _.omitBy(
-        prevState.counterStates,
-        counterState => counterState.id == idToRemove
+      const updatedFiles = _.omitBy(
+        prevState.fileStates,
+        fileState => fileState.id == idToRemove
       );
       const updatedState = {
         ...prevState,
-        counterStates: updatedCounters
+        fileStates: updatedFiles
       };
       return updatedState;
     }
-    case ActionType.IncrementCounter: {
-      const updatedCounters = _.mapValues(
-        prevState.counterStates,
-        prevCounterState => counterStateReducer(prevCounterState, action)
+    case ActionType.FileUploaded: {
+      const updatedFiles = _.mapValues(prevState.fileStates, prevFileState =>
+        fileStateReducer(prevFileState, action)
       );
       const updatedState = {
         ...prevState,
-        counterStates: updatedCounters
+        fileStates: updatedFiles
       };
       return updatedState;
     }

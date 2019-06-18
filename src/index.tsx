@@ -1,6 +1,6 @@
 import * as React from "react";
 import { render } from "react-dom";
-import { addCounter, removeCounter } from "./actions";
+import { addFile, removeFile } from "./actions";
 import { App } from "./components";
 import { store } from "./store";
 
@@ -12,15 +12,15 @@ const subscribeFn = () => {
 store.subscribe(subscribeFn);
 subscribeFn();
 
-store.dispatch(addCounter("foo"));
+store.dispatch(addFile("foo"));
 console.log(store.getState());
 
 setTimeout(() => {
-  store.dispatch(addCounter("bar"));
+  store.dispatch(addFile("bar"));
   console.log(store.getState());
 }, 2000);
 
 setTimeout(() => {
-  store.dispatch(removeCounter("foo"));
+  store.dispatch(removeFile("foo"));
   console.log(store.getState());
 }, 8000);

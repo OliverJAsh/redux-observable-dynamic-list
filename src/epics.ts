@@ -1,25 +1,25 @@
 import { Epic } from "redux-observable";
-import { interval } from "rxjs";
+import { timer } from "rxjs";
 import { tag } from "rxjs-spy/operators/tag";
 import { map, mapTo } from "rxjs/operators";
-import { Action, incrementCounter } from "./actions";
+import { Action, fileUploaded } from "./actions";
 import { runListEpics } from "./run-list-epics";
-import { CounterState, State } from "./state-types";
+import { FileState, State } from "./state-types";
 
-const counterEpic: Epic<Action, Action, CounterState> = (_action$, state$) =>
-  interval(1000).pipe(
-    tag(`interval ${state$.value.id}`),
-    mapTo(incrementCounter(state$.value.id))
+const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
+  timer(1000).pipe(
+    tag(`timer ${state$.value.id}`),
+    mapTo(fileUploaded(state$.value.id))
   );
 
 export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
-  const counterAction$ = state$.pipe(
-    map(state => state.counterStates),
+  const fileAction$ = state$.pipe(
+    map(state => state.fileStates),
     runListEpics({
       action$,
-      listItemEpic: counterEpic,
-      selectListItem: id => counterStates => counterStates[id]
+      listItemEpic: fileEpic,
+      selectListItem: id => fileStates => fileStates[id]
     })
   );
-  return counterAction$;
+  return fileAction$;
 };
