@@ -12,7 +12,7 @@ class File extends Component<{ fileState: FileState }> {
     const removeFile = () => store.dispatch(actions.removeFile(fileState.id));
     return (
       <div>
-        {fileState.isUploaded}
+        Uploaded: {fileState.isUploaded ? "true" : "false"}
         <button onClick={removeFile}>Remove</button>
       </div>
     );
