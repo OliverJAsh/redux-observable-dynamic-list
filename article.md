@@ -104,7 +104,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
         filter(({ id }) => id === action.id)
       );
       const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
-      return fileEpic(action$, fileStateObservable, {}).pipe(
+      return fileEpic(action$, fileState$, {}).pipe(
         // Dynamically unsubscribe from the "child epic"
         takeUntil(removeThisFileAction$)
       );
@@ -217,7 +217,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
         filter(({ id }) => id === action.id)
       );
       const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
-      return fileEpic(action$, fileStateObservable, {}).pipe(
+      return fileEpic(action$, fileState$, {}).pipe(
         // Dynamically unsubscribe from the "child epic"
         takeUntil(stopThisFileAction$)
       );
