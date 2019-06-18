@@ -173,7 +173,10 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
   const fileStatesAction$ = state$.pipe(
     map(state => state.fileStates),
     // Maps our list/dict state to actions representing additions/deletions.
-    getDictStateChangeActions()
+    getDictStateChangeActions({
+      createAddedAction: addedFile,
+      createRemovedAction: removedFile
+    })
   );
 
   const addedFileAction$ = action$.pipe(filter(checkIsAddedFileAction));
