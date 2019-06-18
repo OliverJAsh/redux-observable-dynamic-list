@@ -7,7 +7,7 @@ import { runListEpics } from "./run-list-epics";
 import { FileState, State } from "./state-types";
 
 const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
-  ajax({ url: "https://httpbin.org/put" }).pipe(
+  ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
     tag(`upload ${state$.value.id}`),
     mapTo(fileUploaded(state$.value.id))
   );

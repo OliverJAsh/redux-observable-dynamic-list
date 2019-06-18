@@ -50,7 +50,7 @@ In this way, we can think of _each file in the list as having its own correspond
 As we saw, cancellation is one of our requirements. Fortunately, `Observable`s can provide us with that:
 
 ```ts
-const request$ = ajax({ url: "https://httpbin.org/put" });
+const request$ = ajax({ method: "put", url: "https://httpbin.org/put" });
 
 // This will have the effect of calling `xhr.send`.
 const subscription = request$.subscribe();
@@ -66,7 +66,9 @@ For this reason it seems to make sense to use [redux-observable].
 Inside an [epic](https://redux-observable.js.org/docs/basics/Epics.html), we can declare our side effect (starting the interval). We can then map the response to our `FileUploaded` action.
 
 ```ts
-ajax({ url: "https://httpbin.org/put" }).pipe(mapTo(fileUploaded(fileId)));
+ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+  mapTo(fileUploaded(fileId))
+);
 ```
 
 ## The question
