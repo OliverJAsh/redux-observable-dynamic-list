@@ -1,9 +1,18 @@
 import { Epic } from "redux-observable";
+import { merge } from "rxjs";
 import { tag } from "rxjs-spy/operators/tag";
 import { ajax } from "rxjs/ajax";
-import { map, mapTo } from "rxjs/operators";
-import { Action, fileUploaded } from "./actions";
-import { runListEpics } from "./run-list-epics";
+import { filter, map, mapTo, mergeMap, takeUntil } from "rxjs/operators";
+import {
+  Action,
+  checkIsAddedFileAction,
+  checkIsRemovedFileAction,
+  fileUploaded
+} from "./actions";
+import {
+  getDictStateChangeActions,
+  getStateObservable
+} from "./redux-observable";
 import { FileState, State } from "./state-types";
 
 const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
@@ -13,13 +22,30 @@ const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
   );
 
 export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
-  const fileAction$ = state$.pipe(
+  const fileStatesAction$ = state$.pipe(
     map(state => state.fileStates),
-    runListEpics({
-      action$,
-      listItemEpic: fileEpic,
-      selectListItem: id => fileStates => fileStates[id]
+    getDictStateChangeActions()
+  );
+
+  const addedFileAction$ = action$.pipe(filter(checkIsAddedFileAction));
+  const removedFileAction$ = action$.pipe(filter(checkIsRemovedFileAction));
+  const fileAction$ = addedFileAction$.pipe(
+    mergeMap(action => {
+      const removedThisFileAction$ = removedFileAction$.pipe(
+        filter(({ id }) => id === action.id)
+      );
+      const getState = (state: State) => state.fileStates[action.id];
+      const initialState = getState(state$.value);
+      const fileStateObservable = getStateObservable(
+        state$.pipe(map(getState)),
+        initialState
+      );
+      return fileEpic(action$, fileStateObservable, {}).pipe(
+        // Dynamically unsubscribe from the "child epic"
+        takeUntil(removedThisFileAction$)
+      );
     })
   );
-  return fileAction$;
+
+  return merge(fileStatesAction$, fileAction$);
 };
