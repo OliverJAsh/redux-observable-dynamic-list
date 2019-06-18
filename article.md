@@ -39,7 +39,7 @@ type State = {
 
 _Somewhere, somehow_, we will need to trigger side effect _for each file in the list_, to perform the upload request.
 
-Significantly, we also want to _support cancellation_: when a file is removed from the list, its corresponding [upload request must be aborted][abort]. This will help to save the user's data and provide confidentiality (maybe the user accidentally added the wrong file, and they don't want it to upload).
+Significantly, we also want to _support cancellation_: when a file is removed from the list, its corresponding [upload request must be aborted][abort]. This will help to save the user's data and provide confidentiality (maybe the user accidentally added the wrong file, and they don't want the file to continue uploading).
 
 In this way, we can think of _each file in the list as having its own corresponding side effects_.
 
