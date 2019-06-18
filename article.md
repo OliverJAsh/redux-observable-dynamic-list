@@ -6,53 +6,56 @@ I believe our use cases are simple and common. By providing examples of the chal
 
 ## Setting the scene
 
-Consider an application that displays a list of counters (counting upwards every 1 second), with a button to add a new counter (triggering the `AddCounter` action) or remove an existing one (triggering the `RemoveCounter` action).
+Consider an application which uploads a files to a web server, with the following features:
+
+- A button to add a new file (triggering the `AddFile` action). As soon as a file is added to the list, the request to upload it begins.
+- A button to remove an existing file (triggering the `RemoveFile` action).
 
 ![](./screenshot.png)
 
 ## Redux state types
 
-Each counter will need its own state (a number representing the current value of the counter).
+Each file will need its own state (a number representing the current value of the file).
 
 ```ts
-type CounterState = {
+type FileState = {
   id: string;
-  counter: number;
+  isUploaded: boolean;
 };
 ```
 
-Therefore the root state will be a list/map/dictionary of our `CounterState`s:
+Therefore the root state will be a list/map/dictionary of our `FileState`s:
 
 ```ts
-type CounterStates = {
-  [id: string]: CounterState;
+type FileStates = {
+  [id: string]: FileState;
 };
 type State = {
-  counterStates: CounterStates;
+  fileStates: FileStates;
 };
 ```
 
 ## Side effects and cancellation
 
-_Somewhere, somehow_, we will need to trigger a `setInterval` side effect _for each counter in the list_, to perform the counting.
+_Somewhere, somehow_, we will need to trigger side effect _for each file in the list_, to perform the upload request.
 
-Significantly, we also want to _support cancellation_: when a counter is removed from the list, its corresponding interval must be cleared via `clearInterval`.
+Significantly, we also want to _support cancellation_: when a file is removed from the list, its corresponding [upload request must be aborted][abort]. This will help to save the user's data and provide confidentiality (maybe the user accidentally added the wrong file, and they don't want it to upload).
 
-In this way, we can think of _each counter in the list as having its own corresponding side effects_.
+In this way, we can think of _each file in the list as having its own corresponding side effects_.
 
-You might be thinking: surely it wouldn't be the end of the world if we didn't cancel/clear the interval, as long as the counter is removed from the UI? Whilst in this case that is true, in many other cases, cancellation _does_ matter. This article is just using a simple, contrived example for demonstration purposes. For example, if we were building a photo uploader with a list of photos (as [we are at Unsplash][uploader]), we would want to [abort the request](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort) to upload the photo when its removed from the list (to save the user's data and for confidentiality).
+(These are the constraints we had when building the [uploader at Unsplash][uploader].)
 
 ## redux-observable
 
 As we saw, cancellation is one of our requirements. Fortunately, `Observable`s can provide us with that:
 
 ```ts
-const interval$ = interval(1000);
+const request$ = ajax({ url: "https://httpbin.org/put" });
 
-// This will have the effect of calling `setInterval`.
-const subscription = interval$.subscribe();
+// This will have the effect of calling `xhr.send`.
+const subscription = request$.subscribe();
 
-// This will have the effect of calling `clearInterval`.
+// This will have the effect of calling `xhr.abort`.
 subscription.unsubscribe();
 ```
 
@@ -60,15 +63,15 @@ Note: we shouldn't need to call `unsubscribe` manually—we can instead use the 
 
 For this reason it seems to make sense to use [redux-observable].
 
-Inside an [epic](https://redux-observable.js.org/docs/basics/Epics.html), we can declare our side effect (starting the interval). We can then map each interval to our `IncrementCounter` action.
+Inside an [epic](https://redux-observable.js.org/docs/basics/Epics.html), we can declare our side effect (starting the interval). We can then map the response to our `FileUploaded` action.
 
 ```ts
-interval(1000).pipe(mapTo(incrementCounter(counterId)));
+ajax({ url: "https://httpbin.org/put" }).pipe(mapTo(fileUploaded(fileId)));
 ```
 
 ## The question
 
-Using redux-observable, inside our epic, how can we _correspond_ a counter in our list state to a counter side effect (`setInterval`)?
+Using redux-observable, inside our epic, how can we _correspond_ a file in our list state to a file side effect (upload request)?
 
 In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, `combineEpics` won't help in this case because it only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
 
@@ -76,34 +79,34 @@ In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics
 
 ### Re-using actions
 
-Our epic could observe our existing `AddCounter`/`RemoveCounter` actions:
+Our epic could observe our existing `AddFile`/`RemoveFile` actions:
 
-- When an `AddCounter` action is received, we can run a "child epic" for the corresponding counter (using `mergeMap`).
-- When we receive a corresponding `RemoveCounter` action for this counter instance, we can unsubscribe from the "child epic" `Observable` (using `takeUntil`). This would roughly look like the following:
+- When an `AddFile` action is received, we can run a "child epic" for the corresponding file (using `mergeMap`).
+- When we receive a corresponding `RemoveFile` action for this file instance, we can unsubscribe from the "child epic" `Observable` (using `takeUntil`). This would roughly look like the following:
 
 ```ts
-const counterEpic: Epic<Action, CounterState> = (_action$, state$) =>
-  interval(1000).pipe(mapTo(incrementCounter(state$.value.id)));
+const fileEpic: Epic<Action, FileState> = (_action$, state$) =>
+  ajax({ url: "https://httpbin.org/put" }).pipe(
+    mapTo(fileUploaded(state$.value.id))
+  );
 
 const rootEpic: Epic<Action, State> = (action$, state$) => {
-  const addCounterAction$ = action$.pipe(filter(checkIsAddCounterAction));
-  const removeCounterAction$ = action$.pipe(filter(checkIsRemoveCounterAction));
-  const counterAction$ = addCounterAction$.pipe(
-    // Run one "child epic" per counter
+  const addFileAction$ = action$.pipe(filter(checkIsAddFileAction));
+  const removeFileAction$ = action$.pipe(filter(checkIsRemoveFileAction));
+  const fileAction$ = addFileAction$.pipe(
+    // Run one "child epic" per file
     mergeMap(action => {
-      const removeThisCounterAction$ = removeCounterAction$.pipe(
+      const removeThisFileAction$ = removeFileAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const counterState$ = state$.pipe(
-        map(state => state.counterStates[action.id])
-      );
-      return counterEpic(action$, counterStateObservable, {}).pipe(
+      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
+      return fileEpic(action$, fileStateObservable, {}).pipe(
         // Dynamically unsubscribe from the "child epic"
-        takeUntil(removeThisCounterAction$)
+        takeUntil(removeThisFileAction$)
       );
     })
   );
-  return counterAction$;
+  return fileAction$;
 };
 ```
 
@@ -111,18 +114,18 @@ Note: some minor details have been removed to simplify this example.
 
 Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-reusing-actions/src/epics.ts
 
-However, our `AddCounter` action is _only a request_ to add a counter. It doesn't tell us whether a counter was actually added to the list state. For example, the reducer may have decided not to add the counter, because the list has reached its maximum allowed size. Similarly, our `RemoveCounter` action is also a request as opposed to a notification that the state changed in some way.
+However, our `AddFile` action is _only a request_ to add a file. It doesn't tell us whether a file was actually added to the list state. For example, the reducer may have decided not to add the file, because the list has reached its maximum allowed size. Similarly, our `RemoveFile` action is also a request as opposed to a notification that the state changed in some way.
 
 ```ts
 const MAXIMUM_ALLOWED_SIZE = 10;
 
 const reducer: Reducer<State, Action> = (prevState = initialState, action) => {
   switch (action.type) {
-    case ActionType.AddCounter: {
-      const counterStatesSize = Object.keys(prevState.counterStates);
-      const canAddCounter = counterStatesSize < MAXIMUM_ALLOWED_SIZE;
-      if (canAddCounter) {
-        // Add counter to list state
+    case ActionType.AddFile: {
+      const fileStatesSize = Object.keys(prevState.fileStates);
+      const canAddFile = fileStatesSize < MAXIMUM_ALLOWED_SIZE;
+      if (canAddFile) {
+        // Add file to list state
       } else {
         return prevState;
       }
@@ -132,28 +135,28 @@ const reducer: Reducer<State, Action> = (prevState = initialState, action) => {
 };
 ```
 
-Therefore what we really need is a way to know when a counter was actually added to or removed from the list state.
+Therefore what we really need is a way to know when a file was actually added to or removed from the list state.
 
 ### Watching the state
 
 Another solution involves taking advantage of the `state$: Observable<State>` parameter inside our epic, observing the list state for additions/deletions.
 
-- When a counter is added to the list state, run a "child epic" for the corresponding counter.
-- When we observe a corresponding deletion of this counter instance from the list state, we can unsubscribe from the "child epic" `Observable`.
+- When a file is added to the list state, run a "child epic" for the corresponding file.
+- When we observe a corresponding deletion of this file instance from the list state, we can unsubscribe from the "child epic" `Observable`.
 
-This is the solution we currently use. Behind the scenes it involves some rather complicated RxJS code to get it working, so we've packaged this up into a function we call `runListEpics`. Here it is in usage:
+This is the solution we currently use. We've packaged this up into a function we call `runListEpics`. Here it is in usage:
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
-  const counterAction$ = state$.pipe(
-    map(state => state.counterStates),
+  const fileAction$ = state$.pipe(
+    map(state => state.fileStates),
     runListEpics({
       action$,
-      listItemEpic: counterEpic,
-      selectListItem: id => counterStates => counterStates[id]
+      listItemEpic: fileEpic,
+      selectListItem: id => fileStates => fileStates[id]
     })
   );
-  return counterAction$;
+  return fileAction$;
 };
 ```
 
@@ -165,27 +168,27 @@ If you're interested, there is a [discussion about this approach on GitHub](http
 
 What if our reducer could send instructions for what should happen next? After all, the reducer knows exactly how the state changed, so it's best placed to know what should happen next, in relation to those state changes.
 
-In this world, our reducer could _return an action_ as an instruction to begin counting.
+In this world, our reducer could _return an action_ as an instruction to begin the upload request.
 
 ```ts
 const reducer: Reducer<State, Action> = (prevState = initialState, action) => {
   switch (action.type) {
-    case ActionType.AddCounter: {
+    case ActionType.AddFile: {
       const updatedState = {
         /* … */
       };
       return {
         state: updatedState,
-        actions: [startCounter()]
+        actions: [startFileUpload()]
       };
     }
-    case ActionType.RemoveCounter: {
+    case ActionType.RemoveFile: {
       const updatedState = {
         /* … */
       };
       return {
         state: updatedState,
-        actions: [stopCounter()]
+        actions: [stopFileUpload()]
       };
     }
     // …
@@ -197,24 +200,26 @@ Then our epic would just listen to these actions:
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
-  const startCounterAction$ = action$.pipe(filter(checkIsStartCounterAction));
-  const stopCounterAction$ = action$.pipe(filter(checkIsStopCounterAction));
-  const counterAction$ = startCounterAction$.pipe(
-    // Run one "child epic" per counter
+  const startFileUploadAction$ = action$.pipe(
+    filter(checkIsStartFileUploadAction)
+  );
+  const stopFileUploadAction$ = action$.pipe(
+    filter(checkIsStopFileUploadAction)
+  );
+  const fileAction$ = startFileUploadAction$.pipe(
+    // Run one "child epic" per file
     mergeMap(action => {
-      const stopThisCounterAction$ = stopCounterAction$.pipe(
+      const stopThisFileAction$ = stopFileUploadAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const counterState$ = state$.pipe(
-        map(state => state.counterStates[action.id])
-      );
-      return counterEpic(action$, counterStateObservable, {}).pipe(
+      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
+      return fileEpic(action$, fileStateObservable, {}).pipe(
         // Dynamically unsubscribe from the "child epic"
-        takeUntil(stopThisCounterAction$)
+        takeUntil(stopThisFileAction$)
       );
     })
   );
-  return counterAction$;
+  return fileAction$;
 };
 ```
 
@@ -231,3 +236,4 @@ Perhaps the reason there isn't an existing idiomatic solution for this is becaus
 [elm commands]: https://elmprogramming.com/commands.html
 [redux-observable]: https://redux-observable.js.org/
 [uploader]: https://medium.com/unsplash/building-the-unsplash-uploader-880a5ba0d442
+[abort]: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/abort

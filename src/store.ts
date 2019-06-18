@@ -7,7 +7,7 @@ import { reducer } from "./reducers";
 import { State } from "./state-types";
 
 const spy = create();
-spy.log(/timer/);
+spy.log(/upload/);
 
 //
 // Store
