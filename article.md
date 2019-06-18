@@ -75,6 +75,8 @@ ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
 
 Using redux-observable, inside our epic, how can we _correspond_ a file in our list state to its side effects (the upload request)?
 
+If we have have a set of side effects for each file, intuitively it seems like we will need to instantiate an epic for each file (since side effects live inside epics). In turn, that would require some way of running multiple epics dynamically.
+
 In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics`](https://redux-observable.js.org/docs/api/combineEpics.html). However, `combineEpics` won't help in this case because it only works statically, but our list is dynamic (i.e. is not predefined and can grow or shrink in size at runtime).
 
 ## Potential solutions
