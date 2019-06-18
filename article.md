@@ -24,7 +24,7 @@ type FileState = {
 };
 ```
 
-Therefore the root state will be a list/map/dictionary of our `FileState`s:
+The root state will be a dictionary of our `FileState`s, indexed by their IDs:
 
 ```ts
 type FileStates = {
