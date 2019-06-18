@@ -21,7 +21,7 @@ export const getStateObservable = <State>(
  * This helper allows us to run individual epics for each item in a dynamic
  * dictionary (e.g. files in the uploader).
  *
- * When an item is added to the dictionary, the epic will be start running.
+ * When an item is added to the dictionary, the epic will start running.
  *
  * When an item is removed from the dictionary, the epic will be unsubscribed
  * from, thereby aborting any pending work (e.g. requests).
