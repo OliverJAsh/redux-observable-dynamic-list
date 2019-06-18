@@ -22,13 +22,13 @@ export const removeCounter = (id: string): RemoveCounterAction => ({
   type: ActionType.RemoveCounter,
   id
 });
+export const checkIsRemoveCounterAction = (
+  action: Action
+): action is RemoveCounterAction => action.type === ActionType.RemoveCounter;
 type IncrementCounterAction = {
   type: ActionType.IncrementCounter;
   id: string;
 };
-export const checkIsRemoveCounterAction = (
-  action: Action
-): action is RemoveCounterAction => action.type === ActionType.RemoveCounter;
 export const incrementCounter = (id: string): IncrementCounterAction => ({
   type: ActionType.IncrementCounter,
   id
