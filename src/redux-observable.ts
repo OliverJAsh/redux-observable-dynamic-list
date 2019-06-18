@@ -2,7 +2,7 @@ import { difference } from "lodash";
 import { StateObservable } from "redux-observable";
 import { merge, Observable, OperatorFunction, Subject } from "rxjs";
 import { map, mergeMap, pairwise, startWith } from "rxjs/operators";
-import { Action, addedFile, removedFile } from "./actions";
+import { Action } from "./actions";
 
 export const getStateObservable = <State>(
   state$: Observable<State>,
@@ -26,17 +26,20 @@ export const getStateObservable = <State>(
  * When an item is removed from the dictionary, the epic will be unsubscribed
  * from, thereby aborting any pending work (e.g. requests).
  */
-export const getDictStateChangeActions = <Value>(): OperatorFunction<
-  { [id: string]: Value },
-  Action
-> => dict$ => {
+export const getDictStateChangeActions = <Value>({
+  createAddedAction,
+  createRemovedAction
+}: {
+  createAddedAction: (id: string) => Action;
+  createRemovedAction: (id: string) => Action;
+}): OperatorFunction<{ [id: string]: Value }, Action> => dict$ => {
   const initialDict: { [id: string]: Value } = {};
   const dictPairs$ = dict$.pipe(
     startWith(initialDict),
     pairwise()
   );
 
-  const addedStateId$ = dictPairs$.pipe(
+  const addedId$ = dictPairs$.pipe(
     mergeMap(([prev, current]) => {
       const oldIds = Object.keys(prev);
       const currentIds = Object.keys(current);
@@ -44,7 +47,7 @@ export const getDictStateChangeActions = <Value>(): OperatorFunction<
     })
   );
 
-  const removedStateId$ = dictPairs$.pipe(
+  const removedId$ = dictPairs$.pipe(
     mergeMap(([prev, current]) => {
       const oldIds = Object.keys(prev);
       const currentIds = Object.keys(current);
@@ -53,7 +56,7 @@ export const getDictStateChangeActions = <Value>(): OperatorFunction<
   );
 
   return merge(
-    addedStateId$.pipe(map(addedFile)),
-    removedStateId$.pipe(map(removedFile))
+    addedId$.pipe(map(createAddedAction)),
+    removedId$.pipe(map(createRemovedAction))
   );
 };

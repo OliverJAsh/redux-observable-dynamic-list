@@ -5,9 +5,11 @@ import { ajax } from "rxjs/ajax";
 import { filter, map, mapTo, mergeMap, takeUntil } from "rxjs/operators";
 import {
   Action,
+  addedFile,
   checkIsAddedFileAction,
   checkIsRemovedFileAction,
-  fileUploaded
+  fileUploaded,
+  removedFile
 } from "./actions";
 import {
   getDictStateChangeActions,
@@ -24,7 +26,10 @@ const fileEpic: Epic<Action, Action, FileState> = (_action$, state$) =>
 export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
   const fileStatesAction$ = state$.pipe(
     map(state => state.fileStates),
-    getDictStateChangeActions()
+    getDictStateChangeActions({
+      createAddedAction: addedFile,
+      createRemovedAction: removedFile
+    })
   );
 
   const addedFileAction$ = action$.pipe(filter(checkIsAddedFileAction));
