@@ -88,7 +88,7 @@ Our epic could observe our existing `AddFile`/`RemoveFile` actions:
 
 ```ts
 const fileEpic: Epic<Action, FileState> = (_action$, state$) =>
-  ajax({ url: "https://httpbin.org/put" }).pipe(
+  ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
     mapTo(fileUploaded(state$.value.id))
   );
 
