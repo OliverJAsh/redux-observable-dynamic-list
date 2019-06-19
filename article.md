@@ -6,10 +6,12 @@ I believe our use cases are simple and common. By providing examples of the chal
 
 ## Setting the scene
 
-Consider an application which uploads a files to a web server, with the following features:
+Consider an application which uploads a files to a web server, with the following requirements:
 
 - A button to add a new file (triggering the `AddFile` action). As soon as a file is added to the list, the request to upload it begins.
-- A button to remove an existing file (triggering the `RemoveFile` action).
+- A button to remove an existing file (triggering the `RemoveFile` action). As soon as a file is removed from the list, the upload request is cancelled.
+
+In this article I'll be using a request to [HTTP bin](https://httpbin.org/) to simulate the upload, to keep the example simple.
 
 ![](./screenshot.png)
 
