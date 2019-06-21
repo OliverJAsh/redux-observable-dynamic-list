@@ -1,7 +1,14 @@
 import { Epic } from "redux-observable";
 import { tag } from "rxjs-spy/operators/tag";
 import { ajax } from "rxjs/ajax";
-import { filter, map, mapTo, mergeMap, takeUntil } from "rxjs/operators";
+import {
+  filter,
+  groupBy,
+  map,
+  mapTo,
+  mergeMap,
+  takeUntil
+} from "rxjs/operators";
 import {
   Action,
   checkIsAddFileAction,
@@ -21,22 +28,27 @@ export const rootEpic: Epic<Action, Action, State> = (action$, state$) => {
   const addFileAction$ = action$.pipe(filter(checkIsAddFileAction));
   const removeFileAction$ = action$.pipe(filter(checkIsRemoveFileAction));
   const fileAction$ = addFileAction$.pipe(
-    // Run one child epic per file
-    mergeMap(action => {
-      const removeThisFileAction$ = removeFileAction$.pipe(
-        filter(({ id }) => id === action.id)
-      );
-      const getState = (state: State) => state.fileStates[action.id];
-      const initialState = getState(state$.value);
-      const fileStateObservable = getStateObservable(
-        state$.pipe(map(getState)),
-        initialState
-      );
-      return fileEpic(action$, fileStateObservable, {}).pipe(
-        // Dynamically unsubscribe from the child epic
-        takeUntil(removeThisFileAction$)
-      );
-    })
+    groupBy(action => action.id),
+    mergeMap(group =>
+      group.pipe(
+        // Run one child epic per file
+        mergeMap(action => {
+          const removeThisFileAction$ = removeFileAction$.pipe(
+            filter(({ id }) => id === action.id)
+          );
+          const getState = (state: State) => state.fileStates[action.id];
+          const initialState = getState(state$.value);
+          const fileStateObservable = getStateObservable(
+            state$.pipe(map(getState)),
+            initialState
+          );
+          return fileEpic(action$, fileStateObservable, {}).pipe(
+            // Dynamically unsubscribe from the child epic
+            takeUntil(removeThisFileAction$)
+          );
+        })
+      )
+    )
   );
   return fileAction$;
 };
