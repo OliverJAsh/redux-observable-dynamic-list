@@ -87,27 +87,22 @@ In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics
 
 Our epic could observe our existing `AddFile`/`RemoveFile` actions:
 
-- When an `AddFile` action is received, we can run a "child epic" for the corresponding file (using `mergeMap`).
-- When we receive a corresponding `RemoveFile` action for this file instance, we can unsubscribe from the "child epic" `Observable` (using `takeUntil`). This would roughly look like the following:
+- When an `AddFile` action is received, we can run an Observable for the corresponding file (using `mergeMap`).
+- When we receive a corresponding `RemoveFile` action for this file instance, we can unsubscribe from the `Observable` (using `takeUntil`). This would roughly look like the following:
 
 ```ts
-const fileEpic: Epic<Action, FileState> = (_action$, state$) =>
-  ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
-    mapTo(fileUploaded(state$.value.id))
-  );
-
 const rootEpic: Epic<Action, State> = (action$, state$) => {
   const addFileAction$ = action$.pipe(filter(checkIsAddFileAction));
   const removeFileAction$ = action$.pipe(filter(checkIsRemoveFileAction));
   const fileAction$ = addFileAction$.pipe(
-    // Run one "child epic" per file
+    // Run one Observable per file
     mergeMap(action => {
       const removeThisFileAction$ = removeFileAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
-      return fileEpic(action$, fileState$, {}).pipe(
-        // Dynamically unsubscribe from the "child epic"
+      return ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+        mapTo(fileUploaded(action.id)),
+        // Dynamically unsubscribe from the Observable
         takeUntil(removeThisFileAction$)
       );
     })
@@ -147,12 +142,17 @@ Therefore what we really need is a way to know when a file was actually added to
 
 Another solution involves taking advantage of the `state$: Observable<State>` parameter inside our epic, observing the list state for additions/deletions.
 
-- When a file is added to the list state, run a "child epic" for the corresponding file.
-- When we observe a corresponding deletion of this file instance from the list state, we can unsubscribe from the "child epic" `Observable`.
+- When a file is added to the list state, run an Observable for the corresponding file.
+- When we observe a corresponding deletion of this file instance from the list state, we can unsubscribe from the Observable.
 
 This is the solution we currently use. We've packaged this up into a function we call `runDictEpics` (dict is short for dictionary). Here it is in usage:
 
 ```ts
+const fileEpic: Epic<Action, FileState> = (_action$, state$) =>
+  ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+    mapTo(fileUploaded(state$.value.id))
+  );
+
 const rootEpic: Epic<Action, State> = (action$, state$) => {
   const fileAction$ = state$.pipe(
     map(state => state.fileStates),
@@ -168,7 +168,7 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
 
 Full code: https://github.com/OliverJAsh/redux-observable-dynamic-list/blob/solution-watching-state/src/epics.ts
 
-Alternatively, we can watch the state for additions and deletions like above, and then map those to actions such as `AddedFile` and `RemovedFile` (respectively) and return/dispatch them in our epic. When the epic receives these actions, it can use them to decide when start/stop child epics.
+Alternatively, we can watch the state for additions and deletions like above, and then map those to actions such as `AddedFile` and `RemovedFile` (respectively) and return/dispatch them in our epic. When the epic receives these actions, it can use them to decide when start/stop the Observables for each file.
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
@@ -188,9 +188,9 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
       const removedThisFileAction$ = removedFileAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
-      return fileEpic(action$, fileState$, {}).pipe(
-        // Dynamically unsubscribe from the "child epic"
+      return ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+        mapTo(fileUploaded(action.id)),
+        // Dynamically unsubscribe from the Observable
         takeUntil(removedThisFileAction$)
       );
     })
@@ -247,14 +247,14 @@ const rootEpic: Epic<Action, State> = (action$, state$) => {
     filter(checkIsStopFileUploadAction)
   );
   const fileAction$ = startFileUploadAction$.pipe(
-    // Run one "child epic" per file
+    // Run one Observable per file
     mergeMap(action => {
       const stopThisFileAction$ = stopFileUploadAction$.pipe(
         filter(({ id }) => id === action.id)
       );
-      const fileState$ = state$.pipe(map(state => state.fileStates[action.id]));
-      return fileEpic(action$, fileState$, {}).pipe(
-        // Dynamically unsubscribe from the "child epic"
+      return ajax({ method: "put", url: "https://httpbin.org/put" }).pipe(
+        mapTo(fileUploaded(action.id)),
+        // Dynamically unsubscribe from the Observable
         takeUntil(stopThisFileAction$)
       );
     })
