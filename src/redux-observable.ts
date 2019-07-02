@@ -1,21 +1,7 @@
 import { difference } from "lodash";
-import { StateObservable } from "redux-observable";
-import { merge, Observable, OperatorFunction, Subject } from "rxjs";
+import { merge, OperatorFunction } from "rxjs";
 import { map, mergeMap, pairwise, startWith } from "rxjs/operators";
 import { Action } from "./actions";
-
-export const getStateObservable = <State>(
-  state$: Observable<State>,
-  initialState: State
-) => {
-  // `StateObservable`'s types ask for a `Subject`, but the code doesn't actually need
-  // one. To avoid the hassle of converting our `Observable` to a `Subject`, we just cast
-  // the type.
-  // https://github.com/redux-observable/redux-observable/issues/570
-  const stateSubject = state$ as Subject<State>;
-  const stateStateObservable = new StateObservable(stateSubject, initialState);
-  return stateStateObservable;
-};
 
 /**
  * This helper allows us to run individual epics for each item in a dynamic
