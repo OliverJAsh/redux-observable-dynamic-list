@@ -49,7 +49,7 @@ In this way, we can think of _each file in the list as having its own correspond
 
 ## redux-observable
 
-As we saw, cancellation is one of our requirements. Fortunately, `Observable`s can provide us with that:
+As we saw, cancellation is one of our requirements. Fortunately, Observables can provide us with that:
 
 ```ts
 const request$ = ajax({ method: "put", url: "https://httpbin.org/put" });
@@ -88,7 +88,7 @@ In idiomatic redux-observable, there is a way run multiple epics: [`combineEpics
 Our epic could observe our existing `AddFile`/`RemoveFile` actions:
 
 - When an `AddFile` action is received, we can run an Observable for the corresponding file (using `mergeMap`).
-- When we receive a corresponding `RemoveFile` action for this file instance, we can unsubscribe from the `Observable` (using `takeUntil`). This would roughly look like the following:
+- When we receive a corresponding `RemoveFile` action for this file instance, we can unsubscribe from the Observable (using `takeUntil`). This would roughly look like the following:
 
 ```ts
 const rootEpic: Epic<Action, State> = (action$, state$) => {
